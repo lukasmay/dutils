@@ -36,7 +36,7 @@ changelog:
       - '^docs:'
       - '^test:'
 
-homebrews:
+brews:
   - name: dutils
     repository:
       owner: lukasmay
