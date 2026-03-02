@@ -4,45 +4,53 @@ Docker and Docker Compose workflow simplifier.
 
 ## Installation
 
-### Local (Homebrew)
+### Homebrew (macOS / Linux)
 
-Homebrew requires formulas to be in a tap. You can create a local tap to test the installation:
-
-```bash
-# 1. Create a local tap
-brew tap-new lukasmay/dutils
-
-# 2. Link your local formula
-cp Formula/dutils.rb $(brew --repository lukasmay/dutils)/Formula/dutils.rb
-
-# 3. Install
-brew install --build-from-source lukasmay/dutils/dutils
-```
-
-### Local (Makefile)
+The easiest way to install `dutils` is via Homebrew:
 
 ```bash
-make
-sudo make install
+brew tap lukasmay/dutils
+brew install dutils
 ```
+
+*Note: Homebrew automatically installs the required autocomplete scripts for Zsh, Bash, and Fish.*
+
+### Local Development (From Source)
+
+If you want to build and test features locally:
+
+```bash
+# Builds and installs the binary to ~/go/bin/dutils
+make dev
+```
+*(Make sure `~/go/bin` is in your `$PATH`!)*
 
 ## Features
 
-- **Project Management**: Switch between different Docker Compose projects.
-- **Service Groups**: Define groups of services in `.dutils.yml` and manage them with `@group`.
+## Features
+
+- **Project Management**: Switch between different Docker Compose projects globally.
+  - `dutils project init`: Initialize a new project and add it to your global registry.
+  - `dutils project list`: List all registered projects.
+  - `dutils project status`: See which project is currently active globally.
+  - `dutils project switch <name>`: Set your active project so `dutils` commands run against it from anywhere.
+  - `dutils project clear`: Unset the active project (default to current directory).
+- **Service Groups**: Define logical groups of services in `.dutils.yml` (e.g., `@frontend`) and manage them simultaneously.
 - **Enhanced Commands**:
-  - `dutils list`: Filters containers by project.
-  - `dutils start`: Supports service groups and builds.
-  - `dutils stop`: Supports service groups and `down`.
-  - `dutils restart`: Rebuilds and force-recreates services.
-- **Autocompletion**: Full tab-completion for containers, services, groups, and projects.
+  - `dutils start`: Supports starting individual services, `@groups`, and building (`-b`).
+  - `dutils stop`: Supports stopping service groups and taking down whole environments (`-d`).
+  - `dutils restart`: Rebuilds and force-recreates services or groups.
+- **Autocompletion**: Robust tab-completion dynamically suggests active containers, valid compose services, config groups, and registered projects.
 
 ## Configuration
 
 Add a `.dutils.yml` to your project root:
 
 ```yaml
+# Used to group your containers visually
 project_name: my-app
+
+# Define logical groups to control multiple services at once via @groupname
 groups:
   frontend:
     - web
@@ -50,8 +58,15 @@ groups:
   backend:
     - api
     - db
+
+# Explicitly declare which compose files make up your project
 compose:
   files:
     - docker-compose.yml
     - docker-compose.override.yml
+
+# Customize default behaviors for various commands
+defaults:
+  dlist:
+    scope: all # Example: limit list commands to specific scopes
 ```
