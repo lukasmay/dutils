@@ -1,0 +1,61 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dutils
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./main.go
+    binary: dutils
+    ldflags:
+      - -s -w -X github.com/lukasmay/dutils/cmd.Version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - name: dutils
+    repository:
+      owner: lukasmay
+      name: homebrew-dutils
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/lukasmay/dutils"
+    description: "Docker and Docker Compose workflow simplifier"
+    license: "Apache-2.0"
+    dependencies:
+      - name: go
+    install: |-
+      bin.install "dutils"
+      
+      # Generate shell completions
+      (bash_completion/"dutils").write `#{bin}/dutils completion bash`
+      (zsh_completion/"_dutils").write `#{bin}/dutils completion zsh`
+      (fish_completion/"dutils.fish").write `#{bin}/dutils completion fish`
+
+    test: |
+      system "#{bin}/dutils version"
