@@ -21,8 +21,7 @@ builds:
       - -s -w -X github.com/lukasmay/dutils/cmd.Version={{.Version}}
 
 archives:
-  - format: tar.gz
-    name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
@@ -37,7 +36,7 @@ changelog:
       - '^docs:'
       - '^test:'
 
-brews:
+homebrews:
   - name: dutils
     repository:
       owner: lukasmay
