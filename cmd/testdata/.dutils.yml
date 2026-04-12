@@ -1,0 +1,14 @@
+project_name: testproject
+
+groups:
+  backend:
+    - db
+    - worker
+  all:
+    - web
+    - db
+    - worker
+
+compose:
+  files:
+    - compose.yml

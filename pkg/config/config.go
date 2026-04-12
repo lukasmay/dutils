@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,13 +10,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ComposeConfig struct {
+	Files []string `yaml:"files"`
+}
+
 type Config struct {
 	ProjectName string              `yaml:"project_name"`
 	Groups      map[string][]string `yaml:"groups"`
-	Compose     struct {
-		Files []string `yaml:"files"`
-	} `yaml:"compose"`
-	Defaults struct {
+	Compose     ComposeConfig       `yaml:"compose"`
+	Defaults    struct {
 		Dlist struct {
 			Scope string `yaml:"scope"`
 		} `yaml:"dlist"`
@@ -28,51 +31,75 @@ type ProjectInfo struct {
 	Config *Config
 }
 
+func dutilsConfigDir() string {
+	if dir := os.Getenv("DUTILS_CONFIG_DIR"); dir != "" {
+		return dir
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "dutils")
+}
+
+func ActiveProjectPath() string {
+	return filepath.Join(dutilsConfigDir(), "active")
+}
+
+func ReadActiveProject() (string, error) {
+	data, err := os.ReadFile(ActiveProjectPath())
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
+}
+
 func ResolveProject() (*ProjectInfo, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	// 1. Check for git root and .dutils.yml there
 	gitRoot, _ := getGitRoot(cwd)
+
+	// 1. .dutils.yml at git root
 	if gitRoot != "" {
-		cfgPath := filepath.Join(gitRoot, ".dutils.yml")
-		if _, err := os.Stat(cfgPath); err == nil {
-			cfg, _ := LoadConfig(cfgPath)
-			return &ProjectInfo{Root: gitRoot, Source: "git-config", Config: cfg}, nil
+		if proj, err := loadProjectAt(gitRoot, "git-config"); err != nil {
+			return nil, err
+		} else if proj != nil {
+			return proj, nil
 		}
 	}
 
-	// 2. Check for .dutils.yml in current dir
-	cfgPath := filepath.Join(cwd, ".dutils.yml")
-	if _, err := os.Stat(cfgPath); err == nil {
-		cfg, _ := LoadConfig(cfgPath)
-		return &ProjectInfo{Root: cwd, Source: "pwd-config", Config: cfg}, nil
+	// 2. .dutils.yml in current directory
+	if proj, err := loadProjectAt(cwd, "pwd-config"); err != nil {
+		return nil, err
+	} else if proj != nil {
+		return proj, nil
 	}
 
-	// 3. Environment variable DUTILS_PROJECT_ROOT
+	// 3. DUTILS_PROJECT_ROOT environment variable
 	if envRoot := os.Getenv("DUTILS_PROJECT_ROOT"); envRoot != "" {
 		if _, err := os.Stat(envRoot); err == nil {
-			cfgPath := filepath.Join(envRoot, ".dutils.yml")
-			cfg, _ := LoadConfig(cfgPath)
-			return &ProjectInfo{Root: envRoot, Source: "env", Config: cfg}, nil
+			if proj, err := loadProjectAt(envRoot, "env"); err != nil {
+				return nil, err
+			} else if proj != nil {
+				return proj, nil
+			}
+			return &ProjectInfo{Root: envRoot, Source: "env"}, nil
 		}
 	}
 
-	// 4. Active project file ~/.config/dutils/active
-	home, _ := os.UserHomeDir()
-	activePath := filepath.Join(home, ".config", "dutils", "active")
-	if data, err := os.ReadFile(activePath); err == nil {
-		activeRoot := strings.TrimSpace(string(data))
+	// 4. Active project file (~/.config/dutils/active)
+	if activeRoot, err := ReadActiveProject(); err == nil && activeRoot != "" {
 		if _, err := os.Stat(activeRoot); err == nil {
-			cfgPath := filepath.Join(activeRoot, ".dutils.yml")
-			cfg, _ := LoadConfig(cfgPath)
-			return &ProjectInfo{Root: activeRoot, Source: "active", Config: cfg}, nil
+			if proj, err := loadProjectAt(activeRoot, "active"); err != nil {
+				return nil, err
+			} else if proj != nil {
+				return proj, nil
+			}
+			return &ProjectInfo{Root: activeRoot, Source: "active"}, nil
 		}
 	}
 
-	// 5. Git root (fallback)
+	// 5. Git root without config (fallback)
 	if gitRoot != "" {
 		return &ProjectInfo{Root: gitRoot, Source: "git"}, nil
 	}
@@ -81,9 +108,23 @@ func ResolveProject() (*ProjectInfo, error) {
 	return &ProjectInfo{Root: cwd, Source: "pwd"}, nil
 }
 
+// loadProjectAt looks for a .dutils.yml at root and returns a ProjectInfo if one exists.
+// Returns (nil, nil) when no config file is present at root.
+// Returns (nil, error) when a config file exists but cannot be parsed.
+func loadProjectAt(root, source string) (*ProjectInfo, error) {
+	cfgPath := filepath.Join(root, ".dutils.yml")
+	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
+		return nil, nil
+	}
+	cfg, err := LoadConfig(cfgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", cfgPath, err)
+	}
+	return &ProjectInfo{Root: root, Source: source, Config: cfg}, nil
+}
+
 func getGitRoot(path string) (string, error) {
-	cmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
-	out, err := cmd.Output()
+	out, err := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		return "", err
 	}
@@ -115,11 +156,10 @@ func (p *ProjectInfo) GetComposeFiles() []string {
 		return files
 	}
 
-	// Default discovery
-	defaults := []string{"compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"}
+	candidates := []string{"compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"}
 	var found []string
-	for _, f := range defaults {
-		path := filepath.Join(p.Root, f)
+	for _, name := range candidates {
+		path := filepath.Join(p.Root, name)
 		if _, err := os.Stat(path); err == nil {
 			found = append(found, path)
 		}
@@ -131,16 +171,11 @@ func (p *ProjectInfo) GetProjectName() string {
 	if p.Config != nil && p.Config.ProjectName != "" {
 		return p.Config.ProjectName
 	}
-	
-	// Fallback to directory name
-	name := filepath.Base(p.Root)
-	// Sanitize: lowercase and remove non-alphanumeric
-	name = strings.ToLower(name)
-	var sb strings.Builder
-	for _, r := range name {
+	name := strings.ToLower(filepath.Base(p.Root))
+	return strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			sb.WriteRune(r)
+			return r
 		}
-	}
-	return sb.String()
+		return -1
+	}, name)
 }

@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/lukasmay/dutils/pkg/config"
 	"github.com/spf13/cobra"
@@ -19,33 +21,37 @@ var switchCmd = &cobra.Command{
 		}
 		var matches []string
 		for name := range projects {
-			if len(toComplete) == 0 || (len(name) >= len(toComplete) && name[:len(toComplete)] == toComplete) {
+			if strings.HasPrefix(name, toComplete) {
 				matches = append(matches, name)
 			}
 		}
 		return matches, cobra.ShellCompDirectiveNoFileComp
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-		projects, err := config.ReadRegistry()
-		if err != nil {
+		if err := runSwitch(args[0], os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-
-		path, ok := projects[name]
-		if !ok {
-			fmt.Fprintf(os.Stderr, "Error: project '%s' not found in registry\n", name)
-			os.Exit(1)
-		}
-
-		if err := config.SetActiveProject(path); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Switched active project to '%s' (%s)\n", name, path)
 	},
+}
+
+func runSwitch(name string, w io.Writer) error {
+	projects, err := config.ReadRegistry()
+	if err != nil {
+		return err
+	}
+
+	path, ok := projects[name]
+	if !ok {
+		return fmt.Errorf("project '%s' not found in registry", name)
+	}
+
+	if err := config.SetActiveProject(path); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(w, "Switched active project to '%s' (%s)\n", name, path)
+	return nil
 }
 
 func init() {

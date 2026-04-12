@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -17,27 +18,32 @@ var addCmd = &cobra.Command{
 		if len(args) > 0 {
 			targetDir = args[0]
 		}
-
-		absPath, err := filepath.Abs(targetDir)
-		if err != nil {
+		if err := runAdd(targetDir, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-
-		cfgPath := filepath.Join(absPath, ".dutils.yml")
-		projName := filepath.Base(absPath)
-
-		if cfg, err := config.LoadConfig(cfgPath); err == nil && cfg.ProjectName != "" {
-			projName = cfg.ProjectName
-		}
-
-		if err := config.AddToRegistry(projName, absPath); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Added project '%s' -> %s\n", projName, absPath)
 	},
+}
+
+func runAdd(targetDir string, w io.Writer) error {
+	absPath, err := filepath.Abs(targetDir)
+	if err != nil {
+		return err
+	}
+
+	cfgPath := filepath.Join(absPath, ".dutils.yml")
+	projName := filepath.Base(absPath)
+
+	if cfg, err := config.LoadConfig(cfgPath); err == nil && cfg.ProjectName != "" {
+		projName = cfg.ProjectName
+	}
+
+	if err := config.AddToRegistry(projName, absPath); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(w, "Added project '%s' -> %s\n", projName, absPath)
+	return nil
 }
 
 func init() {

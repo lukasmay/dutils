@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/lukasmay/dutils/pkg/config"
 	"github.com/spf13/cobra"
@@ -15,64 +14,64 @@ var stopCmd = &cobra.Command{
 	ValidArgsFunction: completeServices,
 	Run: func(cmd *cobra.Command, args []string) {
 		down, _ := cmd.Flags().GetBool("down")
+
 		proj, err := config.ResolveProject()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 
-		composeFiles := proj.GetComposeFiles()
-		if len(composeFiles) == 0 {
-			// Fallback to docker stop/rm if no compose files found
-			if len(args) == 0 {
-				fmt.Println("No services/containers specified and no compose files found.")
-				os.Exit(1)
-			}
-			for _, container := range args {
-				action := "stop"
-				argsArr := []string{action}
-				if down {
-					action = "rm"
-					argsArr = []string{action, "-s", "-f"}
-				}
-				argsArr = append(argsArr, container)
-				dockerCmd := exec.Command("docker", argsArr...)
-				dockerCmd.Stdout = os.Stdout
-				dockerCmd.Stderr = os.Stderr
-				dockerCmd.Run()
-			}
-			return
-		}
-
-		expandedTargets := expandTargets(proj, args)
-
-		for _, file := range composeFiles {
-			fileServices := getServicesForFile(file, expandedTargets)
-			if len(expandedTargets) > 0 && len(fileServices) == 0 {
-				continue
-			}
-
-			var stopArgs []string
-			if down {
-				if len(fileServices) == 0 {
-					stopArgs = []string{"compose", "-f", file, "down"}
-				} else {
-					stopArgs = []string{"compose", "-f", file, "rm", "-s", "-f"}
-					stopArgs = append(stopArgs, fileServices...)
-				}
-			} else {
-				stopArgs = []string{"compose", "-f", file, "stop"}
-				stopArgs = append(stopArgs, fileServices...)
-			}
-
-			sCmd := exec.Command("docker", stopArgs...)
-			sCmd.Stdout = os.Stdout
-			sCmd.Stderr = os.Stderr
-			if err := sCmd.Run(); err != nil {
-				os.Exit(1)
-			}
+		if err := runStop(proj, args, down); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
 	},
+}
+
+func runStop(proj *config.ProjectInfo, args []string, down bool) error {
+	composeFiles := proj.GetComposeFiles()
+	if len(composeFiles) == 0 {
+		if len(args) == 0 {
+			return fmt.Errorf("no services specified and no compose files found")
+		}
+		for _, container := range args {
+			if down {
+				if err := runDockerCommand("rm", "-s", "-f", container); err != nil {
+					return err
+				}
+			} else {
+				if err := runDockerCommand("stop", container); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	targets := expandTargets(proj, args)
+
+	for _, file := range composeFiles {
+		services := servicesInFile(file, targets)
+		if len(targets) > 0 && len(services) == 0 {
+			continue
+		}
+
+		var stopArgs []string
+		if down {
+			if len(services) == 0 {
+				stopArgs = []string{"compose", "-f", file, "down"}
+			} else {
+				stopArgs = append([]string{"compose", "-f", file, "rm", "-s", "-f"}, services...)
+			}
+		} else {
+			stopArgs = append([]string{"compose", "-f", file, "stop"}, services...)
+		}
+
+		if err := runDockerCommand(stopArgs...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func init() {
