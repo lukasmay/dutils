@@ -1,0 +1,6 @@
+dutils
+testwork_*
+dutils_testwork_*
+*.test
+*.out
+.DS_Store
