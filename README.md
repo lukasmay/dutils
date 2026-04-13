@@ -6,43 +6,64 @@ Docker and Docker Compose workflow simplifier.
 
 ## Installation
 
-### Homebrew (macOS / Linux)
-
-The easiest way to install `dutils` is via Homebrew:
+### macOS (Homebrew)
 
 ```bash
 brew tap lukasmay/dutils
 brew install dutils
 ```
 
-*Note: Homebrew automatically installs the required autocomplete scripts for Zsh, Bash, and Fish.*
+Shell completions for Zsh, Bash, and Fish are installed automatically.
 
-### Local Development (From Source)
+### Linux (Debian / Ubuntu)
 
-If you want to build and test features locally:
+Download the `.deb` from the [latest release](https://github.com/lukasmay/dutils/releases/latest):
+
+```bash
+wget https://github.com/lukasmay/dutils/releases/latest/download/dutils_Linux_x86_64.deb
+sudo dpkg -i dutils_Linux_x86_64.deb
+```
+
+For ARM64: replace `x86_64` with `arm64`.
+
+### Windows
+
+Download the `.zip` from the [latest release](https://github.com/lukasmay/dutils/releases/latest), extract `dutils.exe`, and place it somewhere on your `PATH`.
+
+Or with PowerShell:
+
+```powershell
+$release = Invoke-RestMethod "https://api.github.com/repos/lukasmay/dutils/releases/latest"
+$asset = $release.assets | Where-Object { $_.name -like "*Windows_x86_64*" }
+Invoke-WebRequest $asset.browser_download_url -OutFile "$env:TEMP\dutils.zip"
+Expand-Archive "$env:TEMP\dutils.zip" -DestinationPath "$HOME\bin" -Force
+```
+
+### From Source
 
 ```bash
 # Builds and installs the binary to ~/go/bin/dutils
 make dev
 ```
-*(Make sure `~/go/bin` is in your `$PATH`!)*
+
+Make sure `~/go/bin` is in your `$PATH`.
 
 ## Features
 
-## Features
-
-- **Project Management**: Switch between different Docker Compose projects globally.
-  - `dutils project init`: Initialize a new project and add it to your global registry.
-  - `dutils project list`: List all registered projects.
-  - `dutils project status`: See which project is currently active globally.
-  - `dutils project switch <name>`: Set your active project so `dutils` commands run against it from anywhere.
-  - `dutils project clear`: Unset the active project (default to current directory).
-- **Service Groups**: Define logical groups of services in `.dutils.yml` (e.g., `@frontend`) and manage them simultaneously.
+- **Container List**: `dutils ps` shows running containers in a clean table. Use `-a` to include stopped containers.
+- **Project Management**: Register Docker Compose projects globally and switch between them from anywhere.
+  - `dutils project init`: Create a `.dutils.yml` in the current directory and register it as the active project.
+  - `dutils project add [path]`: Register an existing project directory (must already have a `.dutils.yml`).
+  - `dutils project list`: List all registered projects, with the active one marked with `*`.
+  - `dutils project switch <name>`: Set the active project so all `dutils` commands target it from any directory.
+  - `dutils project status`: Show which project is currently active.
+  - `dutils project clear`: Clear the active project override (falls back to current directory).
+- **Service Groups**: Define logical groups of services in `.dutils.yml` (e.g., `@frontend`) and manage them as one.
 - **Enhanced Commands**:
-  - `dutils start`: Supports starting individual services, `@groups`, and building (`-b`).
-  - `dutils stop`: Supports stopping service groups and taking down whole environments (`-d`).
-  - `dutils restart`: Rebuilds and force-recreates services or groups.
-- **Autocompletion**: Robust tab-completion dynamically suggests active containers, valid compose services, config groups, and registered projects.
+  - `dutils start [services|@groups]`: Start services or groups. Use `-b` to rebuild with `--no-cache` first.
+  - `dutils stop [services|@groups]`: Stop services or groups. Use `-d` to remove containers instead of just stopping.
+  - `dutils restart [services|@groups]`: Rebuild with `--no-cache` and force-recreate services.
+- **Autocompletion**: Tab-completion suggests running containers, compose services, config groups, and registered project names.
 
 ## Configuration
 
