@@ -29,6 +29,17 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 
+nfpms:
+  - id: dutils
+    package_name: dutils
+    vendor: Lukas May
+    homepage: https://github.com/lukasmay/dutils
+    description: Docker and Docker Compose workflow simplifier
+    license: Apache-2.0
+    formats:
+      - deb
+    bindir: /usr/bin
+
 changelog:
   sort: asc
   filters:
@@ -46,8 +57,6 @@ brews:
     homepage: "https://github.com/lukasmay/dutils"
     description: "Docker and Docker Compose workflow simplifier"
     license: "Apache-2.0"
-    dependencies:
-      - name: go
     install: |-
       bin.install "dutils"
       

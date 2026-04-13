@@ -4,3 +4,4 @@ dutils_testwork_*
 *.test
 *.out
 .DS_Store
+CLAUDE.md
