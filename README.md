@@ -1,6 +1,6 @@
 # dutils
 
-![Tests](https://github.com/lukasmay/dutil/actions/workflows/test.yml/badge.svg)
+![Tests](https://github.com/lukasmay/dutils/actions/workflows/test.yml/badge.svg)
 
 Docker and Docker Compose workflow simplifier.
 
