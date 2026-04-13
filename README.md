@@ -13,7 +13,18 @@ brew tap lukasmay/dutils
 brew install dutils
 ```
 
-Shell completions for Zsh, Bash, and Fish are installed automatically.
+Then enable shell completions:
+
+```bash
+# Zsh
+echo 'eval "$(dutils completion zsh)"' >> ~/.zshrc
+
+# Bash
+echo 'eval "$(dutils completion bash)"' >> ~/.bashrc
+
+# Fish
+dutils completion fish > ~/.config/fish/completions/dutils.fish
+```
 
 ### Linux (Debian / Ubuntu)
 

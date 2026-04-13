@@ -33,6 +33,7 @@ nfpms:
   - id: dutils
     package_name: dutils
     vendor: Lukas May
+    maintainer: "Lukas May <lukasmay@users.noreply.github.com>"
     homepage: https://github.com/lukasmay/dutils
     description: Docker and Docker Compose workflow simplifier
     license: Apache-2.0
@@ -47,23 +48,21 @@ changelog:
       - '^docs:'
       - '^test:'
 
-brews:
+homebrew_casks:
   - name: dutils
     repository:
       owner: lukasmay
       name: homebrew-dutils
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
+    directory: Casks
     homepage: "https://github.com/lukasmay/dutils"
     description: "Docker and Docker Compose workflow simplifier"
     license: "Apache-2.0"
-    install: |-
-      bin.install "dutils"
-      
-      # Generate shell completions
-      (bash_completion/"dutils").write `#{bin}/dutils completion bash`
-      (zsh_completion/"_dutils").write `#{bin}/dutils completion zsh`
-      (fish_completion/"dutils.fish").write `#{bin}/dutils completion fish`
-
-    test: |
-      system "#{bin}/dutils version"
+    binaries:
+      - dutils
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/dutils"]
+          end
