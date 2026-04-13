@@ -1,5 +1,7 @@
 # dutils
 
+![Tests](https://github.com/lukasmay/dutil/actions/workflows/test.yml/badge.svg)
+
 Docker and Docker Compose workflow simplifier.
 
 ## Installation
@@ -67,6 +69,6 @@ compose:
 
 # Customize default behaviors for various commands
 defaults:
-  dlist:
+  ps:
     scope: all # Example: limit list commands to specific scopes
 ```

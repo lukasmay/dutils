@@ -19,9 +19,9 @@ type Config struct {
 	Groups      map[string][]string `yaml:"groups"`
 	Compose     ComposeConfig       `yaml:"compose"`
 	Defaults    struct {
-		Dlist struct {
+		Ps struct {
 			Scope string `yaml:"scope"`
-		} `yaml:"dlist"`
+		} `yaml:"ps"`
 	} `yaml:"defaults"`
 }
 

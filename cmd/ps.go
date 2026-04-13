@@ -17,8 +17,8 @@ type containerRow struct {
 	Ports  string
 }
 
-var dlistCmd = &cobra.Command{
-	Use:   "dlist",
+var psCmd = &cobra.Command{
+	Use:   "ps",
 	Short: "List containers in a formatted table",
 	Run: func(cmd *cobra.Command, args []string) {
 		all, _ := cmd.Flags().GetBool("all")
@@ -76,6 +76,6 @@ func parseContainerRows(output string) []containerRow {
 }
 
 func init() {
-	rootCmd.AddCommand(dlistCmd)
-	dlistCmd.Flags().BoolP("all", "a", false, "Show all containers including stopped ones")
+	rootCmd.AddCommand(psCmd)
+	psCmd.Flags().BoolP("all", "a", false, "Show all containers including stopped ones")
 }
