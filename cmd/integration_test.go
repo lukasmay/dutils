@@ -198,15 +198,15 @@ func TestCompleteServices(t *testing.T) {
 	})
 }
 
-// --- 3.4 runStart ---
+// --- 3.4 runUp ---
 
-func TestRunStart(t *testing.T) {
+func TestRunUp(t *testing.T) {
 	t.Run("no args starts all services", func(t *testing.T) {
 		composeDown(t)
 		proj := testdataProject(t)
 
-		if err := runStart(proj, nil, false); err != nil {
-			t.Fatalf("runStart: %v", err)
+		if err := runUp(proj, nil, false); err != nil {
+			t.Fatalf("runUp: %v", err)
 		}
 
 		// Docker Compose prefixes containers with the directory name "testdata"
@@ -220,8 +220,8 @@ func TestRunStart(t *testing.T) {
 		composeDown(t)
 		proj := testdataProject(t)
 
-		if err := runStart(proj, []string{"web"}, false); err != nil {
-			t.Fatalf("runStart: %v", err)
+		if err := runUp(proj, []string{"web"}, false); err != nil {
+			t.Fatalf("runUp: %v", err)
 		}
 
 		running := runningContainers(t, "testdata")
@@ -243,8 +243,8 @@ func TestRunStart(t *testing.T) {
 		composeDown(t)
 		proj := testdataProject(t)
 
-		if err := runStart(proj, []string{"@backend"}, false); err != nil {
-			t.Fatalf("runStart: %v", err)
+		if err := runUp(proj, []string{"@backend"}, false); err != nil {
+			t.Fatalf("runUp: %v", err)
 		}
 
 		running := runningContainers(t, "testdata")
@@ -265,7 +265,7 @@ func TestRunStart(t *testing.T) {
 
 	t.Run("no compose files and no args returns error", func(t *testing.T) {
 		proj := &config.ProjectInfo{Root: localTempDir(t)}
-		if err := runStart(proj, nil, false); err == nil {
+		if err := runUp(proj, nil, false); err == nil {
 			t.Error("expected error, got nil")
 		}
 	})
@@ -289,8 +289,8 @@ func TestRunStart(t *testing.T) {
 			},
 		}
 
-		if err := runStart(buildProj, []string{"buildable"}, true); err != nil {
-			t.Fatalf("runStart --build: %v", err)
+		if err := runUp(buildProj, []string{"buildable"}, true); err != nil {
+			t.Fatalf("runUp --build: %v", err)
 		}
 
 		running := runningContainers(t, "testdata")
@@ -316,8 +316,8 @@ func TestRunStart(t *testing.T) {
 
 		proj := &config.ProjectInfo{Root: localTempDir(t)} // no compose files
 
-		if err := runStart(proj, []string{containerName}, false); err != nil {
-			t.Fatalf("runStart plain container: %v", err)
+		if err := runUp(proj, []string{containerName}, false); err != nil {
+			t.Fatalf("runUp plain container: %v", err)
 		}
 
 		running := runningContainers(t, containerName)

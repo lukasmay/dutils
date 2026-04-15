@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var startCmd = &cobra.Command{
-	Use:               "start [services|@groups]",
+var upCmd = &cobra.Command{
+	Use:               "up [services|@groups]",
 	Short:             "Start services or containers",
 	ValidArgsFunction: completeServices,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -21,14 +21,14 @@ var startCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := runStart(proj, args, build); err != nil {
+		if err := runUp(proj, args, build); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
 }
 
-func runStart(proj *config.ProjectInfo, args []string, build bool) error {
+func runUp(proj *config.ProjectInfo, args []string, build bool) error {
 	composeFiles := proj.GetComposeFiles()
 	if len(composeFiles) == 0 {
 		if len(args) == 0 {
@@ -66,6 +66,6 @@ func runStart(proj *config.ProjectInfo, args []string, build bool) error {
 }
 
 func init() {
-	rootCmd.AddCommand(startCmd)
-	startCmd.Flags().BoolP("build", "b", false, "Build with --no-cache before starting")
+	rootCmd.AddCommand(upCmd)
+	upCmd.Flags().BoolP("build", "b", false, "Build with --no-cache before starting")
 }

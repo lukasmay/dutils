@@ -71,7 +71,7 @@ Make sure `~/go/bin` is in your `$PATH`.
   - `dutils project clear`: Clear the active project override (falls back to current directory).
 - **Service Groups**: Define logical groups of services in `.dutils.yml` (e.g., `@frontend`) and manage them as one.
 - **Enhanced Commands**:
-  - `dutils start [services|@groups]`: Start services or groups. Use `-b` to rebuild with `--no-cache` first.
+  - `dutils up [services|@groups]`: Start services or groups. Use `-b` to rebuild with `--no-cache` first.
   - `dutils stop [services|@groups]`: Stop services or groups. Use `-d` to remove containers instead of just stopping.
   - `dutils restart [services|@groups]`: Rebuild with `--no-cache` and force-recreate services.
 - **Autocompletion**: Tab-completion suggests running containers, compose services, config groups, and registered project names.
